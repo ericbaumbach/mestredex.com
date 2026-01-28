@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  cards     UserCard[]
+}
+
+model Expansion {
+  id   String @id @default(cuid())
+  name String @unique
+  apiId String @unique // To store the ID from the Pokémon TCG API
+  cards Card[]
+}
+
+model Card {
+  id         String     @id @default(cuid())
+  apiId      String     @unique // The ID from the Pokémon TCG API
+  name       String
+  number     String
+  rarity     String
+  type       String
+  imageUrl   String?
+  expansion  Expansion  @relation(fields: [expansionId], references: [id])
+  expansionId String
+  users      UserCard[]
+}
+
+// This is the join table for the many-to-many relationship
+// between Users and Cards, representing a user's collection.
+model UserCard {
+  id           String      @id @default(cuid())
+  user         User        @relation(fields: [userId], references: [id])
+  userId       String
+  card         Card        @relation(fields: [cardId], references: [id])
+  cardId       String
+  condition    String      // e.g., "Mint", "Near Mint", "Played"
+  isHolo       Boolean     @default(false)
+  language     String      // e.g., "en", "pt", "jp"
+  createdAt    DateTime    @default(now())
+
+  @@unique([userId, cardId, condition, isHolo, language])
+}
